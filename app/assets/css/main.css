@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+html, body{
+  margin: 0;
+  background: #FAFAFA;
+}
+
+@layer base {
+  
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  
+  :root {
+    --font-sans: 'Geist', sans-serif;
+    /*--font-display: 'Gelasio', sans-serif;*/
+  }
+}
+
+@layer utilities {
+  /*.font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.05em;
+  }*/
+  .font-sans {
+    font-family: var(--font-sans);
+    letter-spacing: -0.05em;
+  }
+  .noscrollbar {
+    scrollbar-width: none;
+  }
+}

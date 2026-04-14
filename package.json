@@ -1,0 +1,34 @@
+{
+  "name": "agentart",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@auth0/auth0-nuxt": "^1.0.1",
+    "@lucide/vue": "^1.8.0",
+    "@neondatabase/serverless": "^1.0.2",
+    "@nuxt/fonts": "0.14.0",
+    "@nuxt/image": "2.0.0",
+    "@nuxtjs/seo": "5.1.2",
+    "@pinia/nuxt": "0.11.3",
+    "@tailwindcss/vite": "^4.2.2",
+    "@takumi-rs/core": "^1.0.5",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
+    "nuxt": "^4.4.2",
+    "pinia-plugin-persistedstate": "^4.7.1",
+    "tailwindcss": "^4.2.2",
+    "vue": "^3.5.32",
+    "vue-router": "^5.0.4"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.21.0"
+  }
+}
