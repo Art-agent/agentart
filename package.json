@@ -21,6 +21,7 @@
     "@takumi-rs/core": "^1.0.5",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
+    "nanoid": "^5.1.7",
     "nuxt": "^4.4.2",
     "pinia-plugin-persistedstate": "^4.7.1",
     "tailwindcss": "^4.2.2",

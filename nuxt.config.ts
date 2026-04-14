@@ -17,6 +17,7 @@ export default defineNuxtConfig({
   },
   
   runtimeConfig: {
+    databaseUrl: process.env.NUXT_CONNECTION_STRING,
     auth0: {
       domain: process.env.NUXT_AUTH0_DOMAIN,
       clientId: process.env.NUXT_AUTH0_CLIENT_ID,
