@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, reactive, watch } from "vue"
-import { Plus, X } from "@lucide/vue";
+import { Plus, X } from "@lucide/vue"
 
 definePageMeta({
   layout: "apps",
@@ -72,9 +72,15 @@ const isCreating = ref(false)
 const isSubmitting = ref(false)
 const newAgentForm = reactive({
   name: '',
-  role: 'researcher' as 'researcher' | 'comparator' | 'purchaser',
+  roles: [] as ('researcher' | 'comparator' | 'purchaser')[],
   budget: 0
 })
+
+const roleLabels: Record<string, string> = {
+  researcher: 'Researcher',
+  comparator: 'Comparator',
+  purchaser: 'Purchaser'
+}
 
 const totalCards = computed(() => agents.value.length + 1)
 
@@ -114,9 +120,19 @@ const goTo = (idx: number) => {
   dragOffset.value = 0
 }
 
+const toggleRole = (role: 'researcher' | 'comparator' | 'purchaser') => {
+  const idx = newAgentForm.roles.indexOf(role)
+  if (idx > -1) {
+    newAgentForm.roles.splice(idx, 1)
+  } else {
+    newAgentForm.roles.push(role)
+  }
+}
+
+const isRoleSelected = (role: string) => newAgentForm.roles.includes(role as any)
+
 // ── Input Handlers ──
 const onMouseDown = (e: MouseEvent) => {
-  // Don't drag if interacting with form inputs
   if (isCreating.value) return
   isDragging.value = true
   hasDragged.value = false
@@ -176,9 +192,7 @@ const handleCardClick = (idx: number) => {
   
   if (centeredIndex.value === idx) {
     if (idx >= agents.value.length) {
-      // Expand into creation form instead of navigating
       isCreating.value = true
-      // Optional: update URL without navigating
       history.pushState({}, '', '/agents/new')
     } else {
       router.push(`/agents/${agents.value[idx].id}`)
@@ -191,13 +205,13 @@ const handleCardClick = (idx: number) => {
 const cancelCreate = () => {
   isCreating.value = false
   newAgentForm.name = ''
-  newAgentForm.role = 'researcher'
+  newAgentForm.roles = []
   newAgentForm.budget = 0
   history.pushState({}, '', '/agents')
 }
 
 const createAgent = async () => {
-  if (!newAgentForm.name || newAgentForm.budget <= 0) return
+  if (!newAgentForm.name || newAgentForm.budget <= 0 || newAgentForm.roles.length === 0) return
   
   isSubmitting.value = true
   try {
@@ -205,17 +219,16 @@ const createAgent = async () => {
       method: 'POST',
       body: {
         name: newAgentForm.name,
-        role: newAgentForm.role,
+        roles: newAgentForm.roles,
         budgetAllocated: newAgentForm.budget,
-        budgetRemaining: newAgentForm.budget // initially full
+        budgetRemaining: newAgentForm.budget
       }
     })
     
-    // Add to local list (optimistic)
     agents.value.push({
       id: created.id,
       name: created.name,
-      role: created.role,
+      role: created.roles[0] || 'researcher',
       status: 'idle',
       lastAction: 'Created',
       txns: 0,
@@ -223,9 +236,7 @@ const createAgent = async () => {
       budgetRemaining: created.budgetRemaining
     })
     
-    isCreating.value = false
-    cancelCreate() // reset form
-    // Navigate to the new agent
+    cancelCreate()
     router.push(`/agents/${created.id}`)
   } catch (err) {
     console.error('Failed to create agent:', err)
@@ -246,7 +257,6 @@ onMounted(() => {
   window.addEventListener("mousemove", onMouseMove)
   window.addEventListener("mouseup", onMouseUp)
   
-  // Check if user landed directly on /agents/new
   if (window.location.pathname.includes('/agents/new')) {
     nextTick(() => {
       goTo(agents.value.length)
@@ -391,7 +401,7 @@ onUnmounted(() => {
         <!-- Active State: Creation Form -->
         <div
           v-else
-          class="w-full h-full bg-[#FFFFFF] border border-[#121212] rounded-[14px] flex flex-col p-4 shadow-lg"
+          class="w-full h-full bg-[#FFFFFF] border border-[#121212] rounded-[14px] flex flex-col p-3 shadow-lg"
         >
           <!-- Form Header -->
           <div class="flex items-center justify-between mb-5">
@@ -414,32 +424,32 @@ onUnmounted(() => {
               v-model="newAgentForm.name"
               type="text"
               placeholder="e.g., Research Bot"
-              class="w-full px-3 py-2.5 bg-[#FAFAFA] border border-[#E5E5E5] rounded-lg font-sans text-sm text-[#121212] placeholder:text-[#CCCCCC] focus:outline-none focus:border-[#121212] focus:bg-[#FFFFFF] transition-all"
+              class="w-full px-1 py-1 bg-[#FAFAFA] border border-[#E5E5E5] rounded-lg font-sans text-sm text-[#121212] placeholder:text-[#CCCCCC] focus:outline-none focus:border-[#121212] focus:bg-[#FFFFFF] transition-all"
             >
           </div>
 
-          <!-- Role Selection -->
+          <!-- Role Selection - Multi-select Pills -->
           <div class="flex flex-col gap-y-1.5 mb-4">
-            <label class="font-sans text-[10px] text-[#BBBBBB] uppercase tracking-widest">Role</label>
-            <div class="grid grid-cols-3 gap-x-2">
+            <label class="font-sans text-[10px] text-[#BBBBBB] uppercase tracking-widest">Capabilities</label>
+            <div class="flex flex-wrap gap-2">
               <button
                 v-for="r in ['researcher', 'comparator', 'purchaser']"
                 :key="r"
-                @click.stop="newAgentForm.role = r"
+                @click.stop="toggleRole(r)"
                 :class="[
-                  'py-2 px-1 rounded-lg border font-sans text-[9px] uppercase tracking-wider transition-all',
-                  newAgentForm.role === r
+                  'px-1.5 py-1 rounded-full border font-sans text-[10px] transition-all',
+                  isRoleSelected(r)
                     ? 'border-[#121212] bg-[#121212] text-white shadow-sm'
                     : 'border-[#E5E5E5] text-[#555555] hover:border-[#999999] bg-[#FFFFFF]'
                 ]"
               >
-                {{ r }}
+                {{ roleLabels[r] }}
               </button>
             </div>
           </div>
 
           <!-- Budget Input -->
-          <div class="flex flex-col gap-y-1.5 mb-6">
+          <div class="flex flex-col gap-y-1.5 mb-5">
             <label class="font-sans text-[10px] text-[#BBBBBB] uppercase tracking-widest">Budget Allocation</label>
             <div class="relative">
               <input
@@ -448,20 +458,20 @@ onUnmounted(() => {
                 min="0.01"
                 step="0.01"
                 placeholder="0.00"
-                class="w-full px-3 py-2.5 bg-[#FAFAFA] border border-[#E5E5E5] rounded-lg font-sans text-sm text-[#121212] placeholder:text-[#CCCCCC] focus:outline-none focus:border-[#121212] focus:bg-[#FFFFFF] transition-all"
+                class="w-full px-1.5 py-1.5 bg-[#FAFAFA] border border-[#E5E5E5] rounded-lg font-sans text-sm text-[#121212] placeholder:text-[#CCCCCC] focus:outline-none focus:border-[#121212] focus:bg-[#FFFFFF] transition-all"
               >
-              <span class="absolute right-3 top-1/2 -translate-y-1/2 font-sans text-xs text-[#999999]">USDC</span>
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 font-sans text-xs text-[#999999]">OKB</span>
             </div>
           </div>
 
-          <!-- Create Button -->
+          <!-- Create Button - Compact -->
           <button
             @click.stop="createAgent"
-            :disabled="isSubmitting || !newAgentForm.name || newAgentForm.budget <= 0"
-            class="mt-auto w-full py-3 bg-[#121212] text-white font-sans text-sm font-medium rounded-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#2a2a2a] active:scale-[0.98] transition-all"
+            :disabled="isSubmitting || !newAgentForm.name || newAgentForm.budget <= 0 || newAgentForm.roles.length === 0"
+            class="mt-auto w-full py-2 bg-[#121212] text-white font-sans text-xs font-medium rounded-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#2a2a2a] active:scale-[0.98] transition-all"
           >
             <span v-if="isSubmitting" class="flex items-center justify-center gap-x-2">
-              <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
+              <span class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
               Creating...
             </span>
             <span v-else>Create Agent</span>

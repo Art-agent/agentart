@@ -31,5 +31,11 @@
   "devDependencies": {
     "drizzle-kit": "^0.31.10",
     "tsx": "^4.21.0"
+  },
+  "pnpm": {
+    "supportedArchitectures": {
+      "os": ["current", "linux"],
+      "cpu": ["current", "x64", "arm64"]
+    }
   }
 }
