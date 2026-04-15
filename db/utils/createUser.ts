@@ -14,19 +14,25 @@ export async function createUser(
   const database = await connectDb();
   console.log("Adding user to database")
   try {
-    const user_exists = database.query.users.findFirst({
-      where: (eq(users.auth0Id, auth0Id))
-    });
+    const [existingUser] = await database
+      .select()
+      .from(users)
+      .where(eq(users.auth0Id, auth0Id))
+      .limit(1)
     
-    if (user_exists) return user_exists
+    if (existingUser) {
+      console.log("User exists")
+      event.context.user = existingUser
+      return
+    }
     
-    const [created_user] = database.insert(users).values({
+    const [created_user] = await database.insert(users).values({
       auth0Id,
       email: userData.email,
       name: userData.name || null,
       picture: userData.picture || null
-    }).returning() 
-    console.log("Created user is: ", created_user)
+    }).returning()
+    console.log("User has been created")
     return created_user
   } catch (error) {
     console.log("An error occurred: ", error)

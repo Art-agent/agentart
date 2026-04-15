@@ -8,7 +8,6 @@ export default defineEventHandler(async (event) => {
   const auth0 = useAuth0(event);
   
   const session = await auth0.getSession();
-  console.log(session.user)
   if (!session) {
     throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
   }
@@ -16,16 +15,17 @@ export default defineEventHandler(async (event) => {
    
   const database = await connectDb();
   
-  const userExists = await database
+  const [user] = await database
     .select()
     .from(users)
     .where(eq(users.auth0Id, session?.user?.sub))
+    .limit(1)
   
-  console.log(userExists)
   console.log("AGENTICWALLET GET FINISHED")
+  console.log(user?.agenticWalletAddress)
   return {
-    hasAgenticWallet: !!userExists?.agenticWalletAddress,
-    evmAddress: userExists?.agenticWalletAddress ?? null,
+    hasAgenticWallet: !!user?.agenticWalletAddress,
+    evmAddress: user?.agenticWalletAddress ?? null,
   }
   
 })

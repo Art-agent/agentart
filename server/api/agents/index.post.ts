@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
   
   const database = await connectDb();
   
-  const userExists = database.query.users.findFirst({
+  const userExists = await database.query.users.findFirst({
     where:(eq(users.auth0Id, session?.user?.sub))
   })
   
@@ -46,10 +46,10 @@ export default defineEventHandler(async (event) => {
   }
   
   // Derive next sub-wallet index
-    const result = database
-      .select({ maxIndex: max(agents.subWalletIndex) })
-      .from(agents)
-      .where(eq(agents.userId, user.id))
+  const result = await database
+    .select({ maxIndex: max(agents.subWalletIndex) })
+    .from(agents)
+    .where(eq(agents.userId, user.id))
   
   const nextIndex = (result[0]?.maxIndex ?? -1) + 1
   
@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "Maximum number of agents (50) reached" })
   }
   
-  const [createAgent] = database.insert(agents).values({
+  const [createAgent] = await database.insert(agents).values({
     name,
     roles,
     status: "idle",

@@ -26,14 +26,18 @@ const GAP = 4
 const pillOffset = computed(() =>
   activeIndex.value >= 0 ? activeIndex.value * (PILL_WIDTH + GAP) : 0
 )
+
+const user = useUser();
+
+// console.log(user.value)
 </script>
 
 <template>
   <main class="flex flex-col items-center bg-[#F4F4F4] h-screen w-screen pt-3 overflow-hidden">
     <nav class="flex gap-x-2 bg-transparent">
       <!-- Avatar -->
-      <a href="/auth/logout" class="flex items-center justify-center rounded-full w-9 h-9 bg-[#121212] border border-[#D9D9D9]">
-        <span class="font-sans text-sm font-medium text-[#FFFFFF]">MN</span>
+      <a href="/auth/logout" class="flex items-center justify-center rounded-full p-0.5 bg-[#FFFFFF] border border-[#D9D9D9]">
+        <NuxtImg :src="user.picture" class="flex items-center justify-center rounded-full w-8.5 h-8.5" />
       </a>
 
       <!-- Tab strip -->

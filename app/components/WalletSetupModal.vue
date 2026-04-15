@@ -14,6 +14,7 @@ const submit = async () => {
   loading.value = true
 
   try {
+    alert("Sending wallet address")
     await $fetch("/api/agenticwallet", {
       method: "POST",
       body: { evmAddress: address.value.trim() },

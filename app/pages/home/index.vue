@@ -13,9 +13,8 @@ const timeOfDay = computed(() => {
   if (h < 17) return "Good afternoon"
   return "Good evening"
 })
-
-// Mock user
-const userName = "Marvellous"
+const user = useUser();
+const userName = user.value.name
 
 // Stats
 const stats = [
@@ -100,6 +99,8 @@ async function checkForAgenticWallet() {
     evmWalletAddress.value = evmAddress
   }
 }
+
+
 
 onMounted(async() => {
   await checkForAgenticWallet()

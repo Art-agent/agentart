@@ -5,13 +5,20 @@ definePageMeta({
   layout: "apps"
 })
 
-const address = "0x4f2a3b...c831"
-const fullAddress = "0x4f2a3b9c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6c831"
+
+const address = computed(() => {
+  if (!fullAddress.value || fullAddress.value.length <= 10) return fullAddress.value
+  return `${fullAddress.value.slice(0, 6)}...${fullAddress.value.slice(-4)}`
+})
+const fullAddress = ref<string|null>(null)
+const balance = ref<any>("0.00")
+const inAgents = ref<string|null>("0.00");
+const freeAmount = ref<string|null>("0.00")
 
 const copied = ref(false)
 
 const copyAddress = async () => {
-  await navigator.clipboard.writeText(fullAddress)
+  await navigator.clipboard.writeText(fullAddress.value!)
   copied.value = true
   setTimeout(() => copied.value = false, 2000)
 }
@@ -30,6 +37,30 @@ const typeLabel = (type: string) => {
   if (type === "allocation") return "Agent allocation"
   return "x402 payment"
 }
+
+async function connectToOKXWallet() {
+  if (typeof window.okxwallet === 'undefined') {
+    alert('Install OKX wallet!');
+  }
+  // okxwallet.request({ method: 'eth_requestAccounts' })
+  const txHash = await okxwallet.request({
+    method: 'eth_sendTransaction',
+    params: [{
+    from: "XKO6011eac10b02ab3a12c3bcad95f2bba3618b1f5b",
+    to: fullAddress,
+    value: 0.01,
+    }]
+  });
+}
+
+onMounted(async() => {
+  const { agenticWalletAddress, balanceOkb } = await $fetch('/api/wallet', {
+    method: 'GET'
+  })
+  fullAddress.value = agenticWalletAddress;
+  balance.value = (Number(balanceOkb)).toFixed(2)
+})
+
 </script>
 
 <template>
@@ -44,21 +75,21 @@ const typeLabel = (type: string) => {
     <!-- Balance + address -->
     <section class="flex flex-col items-center mt-8 gap-y-2">
       <span class="font-sans text-[11px] font-regular text-[#999999] tracking-widest uppercase">Total balance</span>
-      <span class="font-sans text-5xl font-regular text-[#121212] tracking-tight">5.00 <span class="text-2xl text-[#999999]">USDC</span></span>
+      <span class="font-sans text-5xl font-regular text-[#121212] tracking-tight">{{ balance }} <span class="text-2xl text-[#999999]">OKB</span></span>
 
       <!-- Address pill -->
       <button
         @click="copyAddress"
         class="flex items-center gap-x-2 mt-1 px-3 py-1.5 rounded-full bg-[#FFFFFF] border border-[#D9D9D9] transition-colors duration-150 hover:bg-[#F0F0F0]"
       >
-        <span class="font-sans text-xs text-[#555555] font-regular">{{ copied ? "Copied!" : address }}</span>
+        <span class="font-sans text-xs text-[#555555] font-regular">{{ copied ? "Copied!" : address || "No wallet" }}</span>
         <Copy :size="11" color="#999999" :stroke-width="1.5" />
       </button>
     </section>
 
     <!-- Actions -->
     <section class="flex justify-center gap-x-3 mt-6">
-      <button class="flex items-center gap-x-1.5 px-5 py-2 rounded-full bg-[#121212] border border-[#121212]">
+      <button @click="connectToOKXWallet" class="flex items-center gap-x-1.5 px-5 py-2 rounded-full bg-[#121212] border border-[#121212]">
         <ArrowDownToLine :size="13" color="#FFFFFF" :stroke-width="1.5" />
         <span class="font-sans text-xs text-[#FFFFFF]">Fund</span>
       </button>
@@ -72,22 +103,22 @@ const typeLabel = (type: string) => {
     <section class="flex flex-col items-center mt-8 px-6 gap-y-3 w-full max-w-sm mx-auto">
       <div class="flex justify-between w-full">
         <span class="font-sans text-[11px] text-[#999999] uppercase tracking-widest">Allocation</span>
-        <span class="font-sans text-[11px] text-[#999999]">5.00 USDC total</span>
+        <span class="font-sans text-[11px] text-[#999999]">{{ balance }} OKB total</span>
       </div>
 
       <!-- Bar -->
       <div class="w-full h-1.5 rounded-full bg-[#E5E5E5] overflow-hidden">
-        <div class="h-full rounded-full bg-[#121212]" style="width: 70%" />
+        <div class="h-full rounded-full bg-[#121212] w-[1%]" />
       </div>
 
       <div class="flex justify-between w-full">
         <div class="flex items-center gap-x-1.5">
           <div class="w-2 h-2 rounded-full bg-[#121212]" />
-          <span class="font-sans text-xs text-[#555555]">In agents · 3.50 USDC</span>
+          <span class="font-sans text-xs text-[#555555]">In agents · {{ inAgents }} OKB</span>
         </div>
         <div class="flex items-center gap-x-1.5">
           <div class="w-2 h-2 rounded-full bg-[#E5E5E5] border border-[#D9D9D9]" />
-          <span class="font-sans text-xs text-[#555555]">Free · 1.50 USDC</span>
+          <span class="font-sans text-xs text-[#555555]">Free · {{ freeAmount }} OKB</span>
         </div>
       </div>
     </section>
