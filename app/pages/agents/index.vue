@@ -394,8 +394,8 @@ onUnmounted(() => {
           @click="handleCardClick(agents.length)"
           class="w-full h-full border border-dashed border-[#D9D9D9] rounded-[14px] flex flex-col items-center justify-center gap-y-2 cursor-pointer hover:border-[#999999] transition-colors bg-[#FFFFFF]"
         >
-          <Plus :size="20" color="#CCCCCC" :stroke-width="1.5" />
-          <span class="font-sans text-sm text-[#CCCCCC]">Add an agent</span>
+          <Plus :size="20" color="#555555" :stroke-width="1.5" />
+          <span class="font-sans text-sm text-[#555555]">Add an agent</span>
         </div>
 
         <!-- Active State: Creation Form -->

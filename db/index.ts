@@ -1,12 +1,12 @@
 import { drizzle, NeonHttpDatabase } from 'drizzle-orm/neon-http';
-// import { type NeonHttpDatabase } from 'drizzle-orm/neon-http';
+import * as schema from "./schema";
 
 let db: ReturnType<typeof drizzle>;
 
 export function connectDb() { 
+  const config = useRuntimeConfig();
   if (!db) {
-    const config = useRuntimeConfig();
-    db = drizzle(config.databaseUrl);
+    db = drizzle(config.databaseUrl, { schema });
   }
   return db
 }

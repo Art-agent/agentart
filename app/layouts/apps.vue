@@ -32,9 +32,9 @@ const pillOffset = computed(() =>
   <main class="flex flex-col items-center bg-[#F4F4F4] h-screen w-screen pt-3 overflow-hidden">
     <nav class="flex gap-x-2 bg-transparent">
       <!-- Avatar -->
-      <div class="flex items-center justify-center rounded-full w-9 h-9 bg-[#121212] border border-[#D9D9D9]">
+      <a href="/auth/logout" class="flex items-center justify-center rounded-full w-9 h-9 bg-[#121212] border border-[#D9D9D9]">
         <span class="font-sans text-sm font-medium text-[#FFFFFF]">MN</span>
-      </div>
+      </a>
 
       <!-- Tab strip -->
       <div class="relative flex items-center h-10 w-auto px-1 gap-x-1 rounded-full bg-[#FFFFFF] border border-[#D9D9D9]">

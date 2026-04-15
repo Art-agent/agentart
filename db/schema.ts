@@ -1,9 +1,9 @@
 // db/schema.ts
 import { pgTable, text, integer, real, timestamp, pgEnum } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
 import { nanoid } from "nanoid"
 
 // ── Enums ──
-export const agentRoleEnum = pgEnum("agent_role", ["researcher", "comparator", "purchaser"])
 export const agentStatusEnum = pgEnum("agent_status", ["active", "idle", "running"])
 export const taskStatusEnum = pgEnum("task_status", ["pending", "running", "done", "failed"])
 export const txTypeEnum = pgEnum("tx_type", ["deposit", "allocation", "payment", "withdrawal"])
@@ -25,7 +25,8 @@ export const agents = pgTable("agents", {
   id: text("id").primaryKey().$defaultFn(() => `agent_${nanoid(12)}`),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  role: agentRoleEnum("role").notNull(),
+  // Array of roles: can be any combination of researcher, comparator, purchaser
+  roles: text("roles").array().notNull().default([]),
   status: agentStatusEnum("status").default("idle").notNull(),
   subWalletIndex: integer("sub_wallet_index").notNull(),
   subWalletAddress: text("sub_wallet_address"),
@@ -74,3 +75,11 @@ export const transactions = pgTable("transactions", {
   chain: text("chain").default("x-layer").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 })
+
+// ── Type Exports ──
+export type User = typeof users.$inferSelect
+export type NewUser = typeof users.$inferInsert
+export type Agent = typeof agents.$inferSelect
+export type NewAgent = typeof agents.$inferInsert
+export type Task = typeof tasks.$inferSelect
+export type NewTask = typeof tasks.$inferInsert

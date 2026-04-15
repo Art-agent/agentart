@@ -1,7 +1,11 @@
 <script setup lang="ts">
+
 definePageMeta({
   layout: "apps"
 })
+
+const showWalletModal = ref(false)
+const evmWalletAddress = ref<string | null>(null)
 
 const timeOfDay = computed(() => {
   const h = new Date().getHours()
@@ -83,11 +87,31 @@ const activityIcon = (type: string) => {
   if (type === "task_done") return "done"
   return "txn"
 }
+
+async function checkForAgenticWallet() {
+  const { hasAgenticWallet, evmAddress } = await $fetch('/api/agenticwallet', {
+    method: "GET"
+  })
+  // alert(hasAgenticWallet)
+  // alert(evmAddress)
+  if (!hasAgenticWallet) { 
+    showWalletModal.value = true
+  } else {
+    evmWalletAddress.value = evmAddress
+  }
+}
+
+onMounted(async() => {
+  await checkForAgenticWallet()
+})
 </script>
 
 <template>
   <div class="w-full h-full flex flex-col overflow-y-auto">
-
+    <WalletSetupModal
+      v-if="showWalletModal"
+      @done="(addr) => { evmWalletAddress = addr; showWalletModal = false }"
+    />
     <!-- Header -->
     <section class="flex flex-col w-full items-center mt-5 gap-y-1">
       <span class="font-sans text-4xl font-regular text-[#121212] opacity-[0.9]">

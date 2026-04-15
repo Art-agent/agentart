@@ -18,6 +18,9 @@ export default defineNuxtConfig({
   
   runtimeConfig: {
     databaseUrl: process.env.NUXT_CONNECTION_STRING,
+    okxApiKey: process.env.OKX_API_KEY,
+    okxSecretKey: process.env.OKX_SECRET_KEY,
+    okxPassphrase: process.env.OKX_PASSPHRASE,
     auth0: {
       domain: process.env.NUXT_AUTH0_DOMAIN,
       clientId: process.env.NUXT_AUTH0_CLIENT_ID,
