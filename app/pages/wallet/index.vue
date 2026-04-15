@@ -4,6 +4,7 @@ import { Copy, ArrowDownToLine, ArrowUpFromLine } from "@lucide/vue";
 definePageMeta({
   layout: "apps"
 })
+const { isInstalled, fundWallet } = useOKXWallet()
 
 
 const address = computed(() => {
@@ -38,19 +39,10 @@ const typeLabel = (type: string) => {
   return "x402 payment"
 }
 
-async function connectToOKXWallet() {
-  if (typeof window.okxwallet === 'undefined') {
-    alert('Install OKX wallet!');
-  }
-  // okxwallet.request({ method: 'eth_requestAccounts' })
-  const txHash = await okxwallet.request({
-    method: 'eth_sendTransaction',
-    params: [{
-    from: "XKO6011eac10b02ab3a12c3bcad95f2bba3618b1f5b",
-    to: fullAddress,
-    value: 0.01,
-    }]
-  });
+const openFund = ref<boolean>(false);
+
+function openFunding() {
+  openFund.value = true
 }
 
 onMounted(async() => {
@@ -66,6 +58,10 @@ onMounted(async() => {
 <template>
   <div class="w-full h-full flex flex-col gap-y-0 overflow-y-auto">
 
+    <FundWallet 
+      v-if="openFund" 
+      @close="openFund = false"
+    />
     <!-- Header -->
     <section class="flex flex-col w-full items-center mt-5 gap-y-4">
       <span class="font-sans text-4xl font-regular text-[#121212] opacity-[0.9]">Wallet</span>
@@ -89,7 +85,7 @@ onMounted(async() => {
 
     <!-- Actions -->
     <section class="flex justify-center gap-x-3 mt-6">
-      <button @click="connectToOKXWallet" class="flex items-center gap-x-1.5 px-5 py-2 rounded-full bg-[#121212] border border-[#121212]">
+      <button @click="openFunding" class="flex items-center gap-x-1.5 px-5 py-2 rounded-full bg-[#121212] border border-[#121212]">
         <ArrowDownToLine :size="13" color="#FFFFFF" :stroke-width="1.5" />
         <span class="font-sans text-xs text-[#FFFFFF]">Fund</span>
       </button>

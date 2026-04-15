@@ -22,7 +22,6 @@ export default defineEventHandler(async (event) => {
     .limit(1)
   
   console.log("AGENTICWALLET GET FINISHED")
-  console.log(user?.agenticWalletAddress)
   return {
     hasAgenticWallet: !!user?.agenticWalletAddress,
     evmAddress: user?.agenticWalletAddress ?? null,

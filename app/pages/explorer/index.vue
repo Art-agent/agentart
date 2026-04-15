@@ -2,132 +2,106 @@
 import { ArrowUpRight, ChevronDown, ChevronUp } from "@lucide/vue";
 
 definePageMeta({
-  layout: "apps"
-})
+  layout: "apps",
+});
 
-const activeAgent = ref("all")
-const activeType = ref("all")
-const expandedTx = ref<string | null>(null)
+// Filters
+const activeAgent = ref("all");
+const activeType = ref("all");
+const expandedTx = ref<string | null>(null);
 
-const agents = ["all", "Researcher", "Comparator", "Purchaser"]
-const types = ["all", "payment", "allocation", "deposit"]
+const agentsList = ["all", "Researcher", "Comparator", "Purchaser"];
+const types = ["all", "payment", "allocation", "deposit"];
 
-const transactions = [
-  {
-    hash: "0x4f2a3b9c...c831",
-    fullHash: "0x4f2a3b9c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6c831",
-    agent: "Researcher",
-    type: "payment",
-    amount: "-0.50",
-    time: "2m ago",
-    block: "4821903",
-    status: "confirmed"
-  },
-  {
-    hash: "0x9e1b7f...f320",
-    fullHash: "0x9e1b7f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8ef320",
-    agent: "Comparator",
-    type: "payment",
-    amount: "-0.10",
-    time: "18m ago",
-    block: "4821887",
-    status: "confirmed"
-  },
-  {
-    hash: "0xb8213d...3d90",
-    fullHash: "0xb8213d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c3d90",
-    agent: "Purchaser",
-    type: "payment",
-    amount: "-0.25",
-    time: "1h ago",
-    block: "4821801",
-    status: "confirmed"
-  },
-  {
-    hash: "0xd4198a...8a21",
-    fullHash: "0xd4198a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f8a21",
-    agent: "Researcher",
-    type: "allocation",
-    amount: "-1.50",
-    time: "2h ago",
-    block: "4821644",
-    status: "confirmed"
-  },
-  {
-    hash: "0xc731a0...a045",
-    fullHash: "0xc731a04b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0fa045",
-    agent: null,
-    type: "deposit",
-    amount: "+5.00",
-    time: "3h ago",
-    block: "4821500",
-    status: "confirmed"
-  },
-  {
-    hash: "0xe820b1...b192",
-    fullHash: "0xe820b14c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0ab192",
-    agent: "Comparator",
-    type: "payment",
-    amount: "-0.10",
-    time: "4h ago",
-    block: "4821390",
-    status: "confirmed"
-  },
-]
+// Data
+const transactions = ref<any[]>([]);
+const loading = ref(true);
 
-const filtered = computed(() => transactions.filter(tx => {
-  const agentMatch = activeAgent.value === "all" || tx.agent === activeAgent.value
-  const typeMatch = activeType.value === "all" || tx.type === activeType.value
-  return agentMatch && typeMatch
-}))
+// Fetch transactions from /api/explorer
+const fetchTransactions = async () => {
+  try {
+    loading.value = true;
+    const data = await $fetch("/api/explorer", { method: "GET" });
+    transactions.value = data;
+  } catch (err) {
+    console.error("Failed to fetch explorer data:", err);
+    transactions.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
 
-const totalTxns = transactions.length
-const totalVolume = transactions
-  .filter(t => t.amount.startsWith("-"))
-  .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0)
-  .toFixed(2)
+// Computed
+const filtered = computed(() => {
+  return transactions.value.filter((tx) => {
+    const agentMatch = activeAgent.value === "all" || tx.agent === activeAgent.value;
+    const typeMatch = activeType.value === "all" || tx.type === activeType.value;
+    return agentMatch && typeMatch;
+  });
+});
+
+const totalTxns = computed(() => transactions.value.length);
+
+const totalVolume = computed(() => {
+  return transactions.value
+    .filter((t) => t.amount.startsWith("-"))
+    .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0)
+    .toFixed(2);
+});
 
 const mostActive = computed(() => {
-  const counts: Record<string, number> = {}
-  transactions.forEach(t => { if (t.agent) counts[t.agent] = (counts[t.agent] || 0) + 1 })
-  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—"
-})
+  const counts: Record<string, number> = {};
+  transactions.value.forEach((t) => {
+    if (t.agent) counts[t.agent] = (counts[t.agent] || 0) + 1;
+  });
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
+});
 
 const typeLabel = (type: string) => {
-  if (type === "deposit") return "Deposit"
-  if (type === "allocation") return "Allocation"
-  return "x402 payment"
-}
+  if (type === "deposit") return "Deposit";
+  if (type === "allocation") return "Allocation";
+  return "x402 payment";
+};
 
 const toggleExpand = (hash: string) => {
-  expandedTx.value = expandedTx.value === hash ? null : hash
-}
+  expandedTx.value = expandedTx.value === hash ? null : hash;
+};
 
-const openExplorer = (hash: string) => {
-  window.open(`https://www.okx.com/explorer/x-layer/tx/${hash}`, "_blank")
-}
+const openExplorer = (fullHash: string) => {
+  if (!fullHash) return;
+  window.open(`https://www.okx.com/explorer/x-layer/tx/${fullHash}`, "_blank");
+};
+
+onMounted(() => {
+  fetchTransactions();
+});
 </script>
 
 <template>
-  <div class="w-full h-full flex flex-col overflow-y-auto">
-
+  <div class="w-full h-full flex flex-col overflow-y-auto pb-8">
     <!-- Header -->
     <section class="flex flex-col w-full items-center mt-5 gap-y-4">
-      <span class="font-sans text-4xl font-regular text-[#121212] opacity-[0.9]">Explorer</span>
-      <span class="font-sans text-sm font-regular text-[#555555] opacity-[0.9]">Your onchain activity · X Layer</span>
+      <span class="font-sans text-4xl font-regular text-[#121212] opacity-[0.9]">
+        Explorer
+      </span>
+      <span class="font-sans text-sm font-regular text-[#555555] opacity-[0.9]">
+        Your onchain activity · X Layer
+      </span>
     </section>
 
-    <!-- Stats strip -->
+    <!-- Stats Strip -->
     <section class="flex justify-center gap-x-2 mt-8 px-6">
-      <div class="flex flex-col items-center px-5 py-3 bg-[#FFFFFF] border border-[#D9D9D9] rounded-[10px] gap-y-0.5">
+      <div class="flex flex-col items-center px-5 py-3 bg-[#FFFFFF] border border-[#D9D9D9] rounded-[10px] gap-y-0.5 flex-1 max-w-[110px]">
         <span class="font-sans text-[10px] text-[#999999] uppercase tracking-widest">Transactions</span>
         <span class="font-sans text-xl text-[#121212]">{{ totalTxns }}</span>
       </div>
-      <div class="flex flex-col items-center px-5 py-3 bg-[#FFFFFF] border border-[#D9D9D9] rounded-[10px] gap-y-0.5">
+      <div class="flex flex-col items-center px-5 py-3 bg-[#FFFFFF] border border-[#D9D9D9] rounded-[10px] gap-y-0.5 flex-1 max-w-[110px]">
         <span class="font-sans text-[10px] text-[#999999] uppercase tracking-widest">Volume</span>
-        <span class="font-sans text-xl text-[#121212]">{{ totalVolume }} <span class="text-sm text-[#999999]">USDC</span></span>
+        <span class="flex gap-x-0.5 justify-end items-center font-sans text-xl text-[#121212]">
+          {{ totalVolume }} <span class="mt-1 flex items-end text-sm text-[#999999]">OKB</span>
+        </span>
       </div>
-      <div class="flex flex-col items-center px-5 py-3 bg-[#FFFFFF] border border-[#D9D9D9] rounded-[10px] gap-y-0.5">
+      <div class="flex flex-col items-center px-5 py-3 bg-[#FFFFFF] border border-[#D9D9D9] rounded-[10px] gap-y-0.5 flex-1 max-w-[110px]">
         <span class="font-sans text-[10px] text-[#999999] uppercase tracking-widest">Most active</span>
         <span class="font-sans text-xl text-[#121212]">{{ mostActive }}</span>
       </div>
@@ -135,11 +109,10 @@ const openExplorer = (hash: string) => {
 
     <!-- Filters -->
     <section class="flex flex-col items-center mt-6 gap-y-3 px-6">
-
-      <!-- Agent filter -->
+      <!-- Agent Filter -->
       <div class="flex gap-x-2 flex-wrap justify-center">
         <button
-          v-for="agent in agents"
+          v-for="agent in agentsList"
           :key="agent"
           @click="activeAgent = agent"
           class="px-3 py-1 rounded-full text-xs font-sans border transition-colors duration-150"
@@ -151,7 +124,7 @@ const openExplorer = (hash: string) => {
         </button>
       </div>
 
-      <!-- Type filter -->
+      <!-- Type Filter -->
       <div class="flex gap-x-2 flex-wrap justify-center">
         <button
           v-for="type in types"
@@ -167,21 +140,23 @@ const openExplorer = (hash: string) => {
       </div>
     </section>
 
-    <!-- Transaction list -->
-    <section class="flex flex-col mt-6 px-6 gap-y-2 w-full max-w-sm mx-auto pb-8">
-      <div
-        v-if="filtered.length === 0"
-        class="flex justify-center items-center py-12"
-      >
+    <!-- Transaction List -->
+    <section class="flex flex-col mt-6 px-6 gap-y-2 w-full max-w-sm mx-auto">
+      <div v-if="loading" class="flex justify-center py-12">
+        <span class="font-sans text-sm text-[#999999]">Loading transactions...</span>
+      </div>
+
+      <div v-else-if="filtered.length === 0" class="flex justify-center items-center py-12">
         <span class="font-sans text-sm text-[#999999]">No transactions found</span>
       </div>
 
+      <!-- Transaction Cards -->
       <div
         v-for="tx in filtered"
         :key="tx.hash"
         class="flex flex-col bg-[#FFFFFF] border border-[#D9D9D9] rounded-[10px] overflow-hidden"
       >
-        <!-- Row -->
+        <!-- Main Row -->
         <button
           @click="toggleExpand(tx.hash)"
           class="flex items-center justify-between px-4 py-3 w-full text-left"
@@ -192,25 +167,30 @@ const openExplorer = (hash: string) => {
               {{ tx.agent ? tx.agent + " · " : "" }}{{ tx.hash }} · {{ tx.time }}
             </span>
           </div>
+
           <div class="flex items-center gap-x-2">
             <span
               class="font-sans text-xs"
               :class="tx.amount.startsWith('+') ? 'text-[#121212]' : 'text-[#999999]'"
             >
-              {{ tx.amount }} USDC
+              {{ tx.amount }} OKB
             </span>
             <ChevronDown
               v-if="expandedTx !== tx.hash"
-              :size="12" color="#999999" :stroke-width="1.5"
+              :size="12"
+              color="#999999"
+              :stroke-width="1.5"
             />
             <ChevronUp
               v-else
-              :size="12" color="#999999" :stroke-width="1.5"
+              :size="12"
+              color="#999999"
+              :stroke-width="1.5"
             />
           </div>
         </button>
 
-        <!-- Expanded detail -->
+        <!-- Expanded Details -->
         <Transition name="expand">
           <div
             v-if="expandedTx === tx.hash"
@@ -218,11 +198,9 @@ const openExplorer = (hash: string) => {
           >
             <div class="flex justify-between">
               <span class="font-sans text-[10px] text-[#999999] uppercase tracking-widest">Full hash</span>
-              <span class="font-sans text-[10px] text-[#555555] break-all text-right max-w-[180px]">{{ tx.fullHash }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="font-sans text-[10px] text-[#999999] uppercase tracking-widest">Block</span>
-              <span class="font-sans text-[10px] text-[#555555]">#{{ tx.block }}</span>
+              <span class="font-sans text-[10px] text-[#555555] break-all text-right max-w-[180px]">
+                {{ tx.fullHash }}
+              </span>
             </div>
             <div class="flex justify-between">
               <span class="font-sans text-[10px] text-[#999999] uppercase tracking-widest">Status</span>
@@ -230,16 +208,15 @@ const openExplorer = (hash: string) => {
             </div>
             <button
               @click="openExplorer(tx.fullHash)"
-              class="flex items-center gap-x-1 mt-1 self-end"
+              class="flex items-center gap-x-1 mt-2 self-end"
             >
-              <span class="font-sans text-[10px] text-[#555555]">View on X Layer</span>
+              <span class="font-sans text-[10px] text-[#555555]">View on X Layer Explorer</span>
               <ArrowUpRight :size="11" color="#555555" :stroke-width="1.5" />
             </button>
           </div>
         </Transition>
       </div>
     </section>
-
   </div>
 </template>
 
@@ -256,7 +233,7 @@ const openExplorer = (hash: string) => {
 }
 .expand-enter-to,
 .expand-leave-from {
-  max-height: 200px;
+  max-height: 180px;
   opacity: 1;
 }
 </style>

@@ -20,39 +20,10 @@ interface Agent {
   budgetRemaining: number
 }
 
-// ── Data ──
-const agents = ref<Agent[]>([
-  {
-    id: "a1",
-    name: "Scout",
-    role: "researcher",
-    status: "active",
-    lastAction: "Searched Tavily API",
-    txns: 42,
-    budgetAllocated: 2.00,
-    budgetRemaining: 1.60,
-  },
-  {
-    id: "a2",
-    name: "Judge",
-    role: "comparator",
-    status: "idle",
-    lastAction: "Evaluated 3 options",
-    txns: 18,
-    budgetAllocated: 1.50,
-    budgetRemaining: 1.20,
-  },
-  {
-    id: "a3",
-    name: "Closer",
-    role: "purchaser",
-    status: "running",
-    lastAction: "Initiating x402 payment",
-    txns: 7,
-    budgetAllocated: 1.00,
-    budgetRemaining: 0.80,
-  },
-])
+// ── State ──
+const agents = ref<Agent[]>([])
+const loading = ref(true)
+const error = ref("")
 
 // ── Carousel Config ──
 const CARD_WIDTH = 240
@@ -70,6 +41,7 @@ const hasDragged = ref(false)
 // ── Creation State ──
 const isCreating = ref(false)
 const isSubmitting = ref(false)
+
 const newAgentForm = reactive({
   name: '',
   roles: [] as ('researcher' | 'comparator' | 'purchaser')[],
@@ -84,13 +56,22 @@ const roleLabels: Record<string, string> = {
 
 const totalCards = computed(() => agents.value.length + 1)
 
-// If user swipes away from the add-card while creating, cancel the form
+// ── Watchers ──
 watch(centeredIndex, (newIdx) => {
   if (newIdx !== agents.value.length && isCreating.value) {
     cancelCreate()
   }
 })
 
+// ── Computed ──
+const activeAgentName = computed(() => {
+  if (centeredIndex.value >= agents.value.length) {
+    return isCreating.value ? "New agent" : "Add an agent"
+  }
+  return agents.value[centeredIndex.value]?.name ?? ""
+})
+
+// ── Carousel Helpers ──
 const getTranslateX = (idx: number) => {
   const baseOffset = (idx - centeredIndex.value) * CARD_TOTAL
   const drag = dragOffset.value * RESISTANCE
@@ -120,6 +101,7 @@ const goTo = (idx: number) => {
   dragOffset.value = 0
 }
 
+// ── Form Helpers ──
 const toggleRole = (role: 'researcher' | 'comparator' | 'purchaser') => {
   const idx = newAgentForm.roles.indexOf(role)
   if (idx > -1) {
@@ -131,7 +113,7 @@ const toggleRole = (role: 'researcher' | 'comparator' | 'purchaser') => {
 
 const isRoleSelected = (role: string) => newAgentForm.roles.includes(role as any)
 
-// ── Input Handlers ──
+// ── Drag & Touch Handlers ──
 const onMouseDown = (e: MouseEvent) => {
   if (isCreating.value) return
   isDragging.value = true
@@ -150,7 +132,6 @@ const onMouseMove = (e: MouseEvent) => {
 const onMouseUp = () => {
   if (!isDragging.value) return
   isDragging.value = false
-
   if (Math.abs(dragOffset.value) > DRAG_THRESHOLD) {
     const direction = dragOffset.value < 0 ? 1 : -1
     goTo(centeredIndex.value + direction)
@@ -178,7 +159,6 @@ const onTouchMove = (e: TouchEvent) => {
 const onTouchEnd = () => {
   if (!isDragging.value) return
   isDragging.value = false
-
   if (Math.abs(dragOffset.value) > DRAG_THRESHOLD) {
     const direction = dragOffset.value < 0 ? 1 : -1
     goTo(centeredIndex.value + direction)
@@ -189,7 +169,7 @@ const onTouchEnd = () => {
 
 const handleCardClick = (idx: number) => {
   if (hasDragged.value) return
-  
+
   if (centeredIndex.value === idx) {
     if (idx >= agents.value.length) {
       isCreating.value = true
@@ -202,6 +182,7 @@ const handleCardClick = (idx: number) => {
   }
 }
 
+// ── Creation Form ──
 const cancelCreate = () => {
   isCreating.value = false
   newAgentForm.name = ''
@@ -212,7 +193,7 @@ const cancelCreate = () => {
 
 const createAgent = async () => {
   if (!newAgentForm.name || newAgentForm.budget <= 0 || newAgentForm.roles.length === 0) return
-  
+
   isSubmitting.value = true
   try {
     const created = await $fetch('/api/agents', {
@@ -224,18 +205,18 @@ const createAgent = async () => {
         budgetRemaining: newAgentForm.budget
       }
     })
-    
+
     agents.value.push({
       id: created.id,
       name: created.name,
-      role: created.roles[0] || 'researcher',
+      role: created.roles?.[0] || 'researcher',
       status: 'idle',
       lastAction: 'Created',
       txns: 0,
       budgetAllocated: created.budgetAllocated,
       budgetRemaining: created.budgetRemaining
     })
-    
+
     cancelCreate()
     router.push(`/agents/${created.id}`)
   } catch (err) {
@@ -246,17 +227,42 @@ const createAgent = async () => {
   }
 }
 
-const activeAgentName = computed(() => {
-  if (centeredIndex.value >= agents.value.length) {
-    return isCreating.value ? "New agent" : "Add an agent"
-  }
-  return agents.value[centeredIndex.value]?.name ?? ""
-})
+// ── Fetch Agents ──
+const fetchAgents = async () => {
+  try {
+    loading.value = true
+    error.value = ""
 
-onMounted(() => {
+    const result = await $fetch('/api/agents', {
+      method: 'GET'
+    })
+
+    agents.value = result.map((agent: any) => ({
+      id: agent.id,
+      name: agent.name,
+      role: agent.role || 'researcher',
+      status: agent.status || 'idle',
+      lastAction: agent.lastAction || 'No activity yet',
+      txns: agent.txns || 0,
+      budgetAllocated: Number(agent.budgetAllocated) || 0,
+      budgetRemaining: Number(agent.budgetRemaining) || 0,
+    }))
+  } catch (err: any) {
+    console.error(err)
+    error.value = "Failed to load agents"
+  } finally {
+    loading.value = false
+  }
+}
+
+// ── Lifecycle ──
+onMounted(async () => {
+  await fetchAgents()
+
   window.addEventListener("mousemove", onMouseMove)
   window.addEventListener("mouseup", onMouseUp)
-  
+
+  // Handle direct access to /agents/new
   if (window.location.pathname.includes('/agents/new')) {
     nextTick(() => {
       goTo(agents.value.length)

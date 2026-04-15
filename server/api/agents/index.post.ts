@@ -17,11 +17,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: "You are not authorized" })
   }
   
-  const user = event.context.user;
-  if (!user) {
-    throw createError({ statusCode: 404, statusMessage: "User not found" })
-  }
-  
   //Validate the input of user
   const body = await readBody(event);
   const parsed = createAgentSchema.safeParse(body);

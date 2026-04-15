@@ -9,14 +9,14 @@ export default defineEventHandler(async (event) => {
   
   if (!session?.user) throw createError({ statusCode: 401, statusMessage: "Unauthorized" })
   
-  const database = connectDb();
+  const database = await connectDb();
   
   const user = await database.query.users.findFirst({
     where: (users, { eq }) => eq(users.auth0Id, session.user.sub)
   })
   if (!user) throw createError({ statusCode: 404, statusMessage: "User not found" })
   
-  const result = await db.query.agents.findMany({
+  const result = await database.query.agents.findMany({
     where: eq(agents.userId, user.id),
     orderBy: (agents, { asc }) => asc(agents.createdAt)
   })

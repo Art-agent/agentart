@@ -7,6 +7,7 @@ definePageMeta({
 const showWalletModal = ref(false)
 const evmWalletAddress = ref<string | null>(null)
 
+
 const timeOfDay = computed(() => {
   const h = new Date().getHours()
   if (h < 12) return "Good morning"
@@ -17,12 +18,12 @@ const user = useUser();
 const userName = user.value.name
 
 // Stats
-const stats = [
-  { label: "Agents", value: "3" },
-  { label: "Tasks", value: "12" },
-  { label: "Transactions", value: "67" },
-  { label: "Spent", value: "$2.05" },
-]
+const stats = ref([
+  { label: "Agents", value: "0" },
+  { label: "Tasks", value: "0" },
+  { label: "Transactions", value: "0" },
+  { label: "Spent", value: "$0.00" },
+])
 
 // Status line
 const activeAgents = 2
@@ -81,6 +82,28 @@ const activity = [
   },
 ]
 
+async function loadDashboardData() {
+  try {
+    // 1. Check wallet
+    const walletData = await $fetch('/api/agenticwallet', { method: "GET" })
+    
+    evmWalletAddress.value = walletData.evmAddress
+    showWalletModal.value = !walletData.hasAgenticWallet
+
+    // 2. Get dashboard stats
+    const homeData = await $fetch('/api/home', { method: "GET" })
+
+    stats.value = [
+      { label: "Agents", value: homeData.agentsCount.toString() },
+      { label: "Tasks", value: homeData.tasksCount.toString() },
+      { label: "Transactions", value: homeData.transactionsCount.toString() },
+      { label: "Spent", value: `$${homeData.totalSpentOkb.toFixed(2)}` },
+    ]
+  } catch (err) {
+    console.error("Failed to load dashboard data:", err)
+  }
+}
+
 const activityIcon = (type: string) => {
   if (type === "task_running") return "running"
   if (type === "task_done") return "done"
@@ -104,6 +127,7 @@ async function checkForAgenticWallet() {
 
 onMounted(async() => {
   await checkForAgenticWallet()
+  await loadDashboardData()
 })
 </script>
 

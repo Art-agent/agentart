@@ -32,6 +32,7 @@ flowchart TD
       Comparator[Comparator Agent <br> Evaluation, ranking, decision making]
       Purchaser[Purchaser Agent <br> x402 payment execution, tx logging]
   end
+```
 
 Each user has one master Agentic Wallet provisioned via OKX Onchain OS. Up to 50 sub-wallets are derived from the master, one per agent. Private keys are generated and stored inside a TEE — inaccessible to Art, Anthropic, or OKX.
 

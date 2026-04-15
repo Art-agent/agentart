@@ -22,8 +22,7 @@ export async function createUser(
     
     if (existingUser) {
       console.log("User exists")
-      event.context.user = existingUser
-      return
+      return existingUser
     }
     
     const [created_user] = await database.insert(users).values({
